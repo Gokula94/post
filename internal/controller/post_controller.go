@@ -61,6 +61,11 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	// Call REST API
 	//myurl := "https://api.restful-api.dev/objects"
+	post := &httpv1alpha1.Post{}
+
+	u := r.Get(ctx, req.NamespacedName, post)
+	fmt.Println(u)
+	fmt.Println("gonna print cr resource")
 	payload, err := json.Marshal(instance)
 	fmt.Println(payload)
 	if err != nil {
