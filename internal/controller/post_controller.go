@@ -51,13 +51,13 @@ type PostReconciler struct {
 func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	logger.Info("customresource", req.NamespacedName)
+	//logger.Info("customresource", req.NamespacedName)
 
 	// Fetch the CustomResource instance
 	instance := &httpv1alpha1.Post{}
-	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
+	// if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
+	// 	return ctrl.Result{}, client.IgnoreNotFound(err)
+	// }
 
 	// Call REST API
 	//myurl := "https://api.restful-api.dev/objects"
