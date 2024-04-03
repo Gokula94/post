@@ -72,7 +72,7 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		logger.Info("Error getting resource: %v", err)
 		requeue = true
 
-		if requeue != true {
+		if requeue {
 			logger.Info(fmt.Sprintf("Pod created is %v", req.NamespacedName))
 
 			const myurl = "https://api.restful-api.dev/objects"
