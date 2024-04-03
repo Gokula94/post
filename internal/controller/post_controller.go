@@ -18,8 +18,10 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -54,7 +56,7 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	//logger.Info("customresource", req.NamespacedName)
 
 	// Fetch the CustomResource instance
-	instance := &httpv1alpha1.Post{}
+	//instance := &httpv1alpha1.Post{}
 	// if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
 	// 	return ctrl.Result{}, client.IgnoreNotFound(err)
 	// }
@@ -63,15 +65,34 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	//myurl := "https://api.restful-api.dev/objects"
 	post := &httpv1alpha1.Post{}
 
-	u := r.Get(ctx, req.NamespacedName, post)
-	fmt.Println(u)
-	fmt.Println("gonna print cr resource")
-	payload, err := json.Marshal(instance)
-	fmt.Println(payload)
-	if err != nil {
-		logger.Info("Failed to marshal custom resource to JSON")
-		return ctrl.Result{}, err
+	if err := r.Get(ctx, req.NamespacedName, post); err != nil {
+		logger.Info("no resource found")
 	}
+	logger.Info(fmt.Sprintf("Pod created is %v", req.NamespacedName))
+
+	const myurl = "https://api.restful-api.dev/objects"
+	fmt.Println(myurl)
+	requestBody := strings.NewReader(`
+			 
+				{
+					"name": "3801-XGS-PON",
+					"data": {
+						"Rx_Operating_Wavelength": 1280,
+						"type": "10G Passive  Optical Network (PON) transceivers"
+					}
+				 }
+
+			 `)
+	fmt.Println(requestBody)
+	response, err := http.Post(myurl, "application/json", requestBody)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("post call is suceesful")
+	defer response.Body.Close()
+	content, _ := io.ReadAll(response.Body)
+
+	fmt.Println(string(content))
 
 	// //req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(payload))
 	// req, err := http.Post(myurl, "application/json", payload)
