@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- http_v1alpha1_post.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

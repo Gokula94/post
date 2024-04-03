@@ -1,0 +1,27 @@
+# permissions for end users to view posts.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: post-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: post
+    app.kubernetes.io/part-of: post
+    app.kubernetes.io/managed-by: kustomize
+  name: post-viewer-role
+rules:
+- apiGroups:
+  - http.gokula.zinkworks
+  resources:
+  - posts
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - http.gokula.zinkworks
+  resources:
+  - posts/status
+  verbs:
+  - get

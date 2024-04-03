@@ -1,0 +1,12 @@
+apiVersion: http.gokula.zinkworks/v1alpha1
+kind: Post
+metadata:
+  labels:
+    app.kubernetes.io/name: post
+    app.kubernetes.io/instance: post-sample
+    app.kubernetes.io/part-of: post
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: post
+  name: post-sample
+spec:
+  # TODO(user): Add fields here
