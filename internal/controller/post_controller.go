@@ -18,6 +18,8 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,10 +49,40 @@ type PostReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	logger.Info("customresource", req.NamespacedName)
 
+	// Fetch the CustomResource instance
+	instance := &httpv1alpha1.Post{}
+	if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// Call REST API
+	//myurl := "https://api.restful-api.dev/objects"
+	payload, err := json.Marshal(instance)
+	fmt.Println(payload)
+	if err != nil {
+		logger.Info("Failed to marshal custom resource to JSON")
+		return ctrl.Result{}, err
+	}
+
+	// //req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(payload))
+	// req, err := http.Post(myurl, "application/json", payload)
+	// if err != nil {
+	// 	logger.Info("Failed to create HTTP request")
+	// 	return ctrl.Result{}, err
+	// }
+	// req.Header.Set("Content-Type", "application/json")
+
+	// client := &http.Client{}
+	// resp, err := client.Do(req)
+	// if err != nil {
+	// 	logger.Info("Failed to call REST API")
+	// 	return ctrl.Result{}, err
+	// }
+	// defer resp.Body.Close()
 	return ctrl.Result{}, nil
 }
 

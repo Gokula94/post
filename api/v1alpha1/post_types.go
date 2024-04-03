@@ -29,7 +29,17 @@ type PostSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Post. Edit post_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Device     string           `json:"device,omitempty"`
+	Site       string           `json:"site,omitempty"`
+	Type       string           `json:"type,omitempty"`
+	Parameters []NamespacedName `json:"parameters"`
+}
+type NamespacedName struct {
+	Name                  string `json:"name"`
+	Operating_Wavelength  string `json:"operating_wavelength"`
+	Launch_Power          string `json:"launch_power"`
+	Operating_Temperature string `json:"operating_temperature"`
+	Interfaces            string `json:"interfaces"`
 }
 
 // PostStatus defines the observed state of Post
