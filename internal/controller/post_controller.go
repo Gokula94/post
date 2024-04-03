@@ -63,17 +63,21 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	// Call REST API
 	//myurl := "https://api.restful-api.dev/objects"
+	var requeue bool
 	post := &httpv1alpha1.Post{}
 	logger.Info("evaluating custom resource")
 
 	err := r.Get(ctx, req.NamespacedName, post)
-	if err == nil {
+	if err != nil {
+		logger.Info("Error getting resource: %v", err)
+		requeue = true
 
-		//logger.Info(fmt.Sprintf("Pod created is %v", req.NamespacedName))
+		if requeue != true {
+			logger.Info(fmt.Sprintf("Pod created is %v", req.NamespacedName))
 
-		const myurl = "https://api.restful-api.dev/objects"
-		fmt.Println(myurl)
-		requestBody := strings.NewReader(`
+			const myurl = "https://api.restful-api.dev/objects"
+			fmt.Println(myurl)
+			requestBody := strings.NewReader(`
 			 
 				{
 					"name": "3801-XGS-PON",
@@ -84,16 +88,17 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 				 }
 
 			 `)
-		fmt.Println(requestBody)
-		response, err := http.Post(myurl, "application/json", requestBody)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("post call is suceesful")
-		defer response.Body.Close()
-		content, _ := io.ReadAll(response.Body)
+			fmt.Println(requestBody)
+			response, err := http.Post(myurl, "application/json", requestBody)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("post call is suceesful")
+			defer response.Body.Close()
+			content, _ := io.ReadAll(response.Body)
 
-		fmt.Println(string(content))
+			fmt.Println(string(content))
+		}
 	}
 
 	// //req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(payload))
