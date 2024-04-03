@@ -9,4 +9,12 @@ metadata:
     app.kubernetes.io/created-by: post
   name: post-sample
 spec:
-  # TODO(user): Add fields here
+  device: "3801-XGS-PON"
+  site: Athlone 
+  type: xgs-pon
+  parameters:
+    - name: ciena 
+      operating_wavelength: 1580
+      launch_power: 4
+      operating_temperature: 40
+      interfaces: 9
