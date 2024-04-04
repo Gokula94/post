@@ -18,21 +18,15 @@ package controller
 
 import (
 	"context"
-	"flag"
-	"log"
-	"path/filepath"
-	"time"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/dynamic/dynamicinformer"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	//"sigs.k8s.io/controller-runtime/pkg/log"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	httpv1alpha1 "post.com/api/v1alpha1"
 )
@@ -57,51 +51,22 @@ type PostReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	//log := log.FromContext(ctx)
-	//rules := clientcmd.NewDefaultClientConfigLoadingRules()
-	//kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, &clientcmd.ConfigOverrides{})
+	logger := log.FromContext(ctx)
+	post := &httpv1alpha1.Post{}
 
-	// c, err := kubeconfig.ClientConfig()
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	var kubeconfig *string
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-
-	cfg, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	err := r.Get(ctx, req.NamespacedName, post)
 	if err != nil {
-		log.Println("could not get config")
+		if apierrors.IsNotFound(err) {
+			logger.Info("Scaler resource not found. Ignoring since object must be deleted.")
+			return ctrl.Result{}, nil
+		}
+		logger.Error(err, "Failed")
+		return ctrl.Result{}, err
 	}
-
-	clusterClient, err := dynamic.NewForConfig(cfg)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	resource := httpv1alpha1.GroupVersion.WithResource("posts")
-	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient,
-		time.Minute, "", nil)
-	informer := factory.ForResource(resource).Informer()
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			log.Println("AddFunc")
-		},
-		UpdateFunc: func(oldObj, newObj interface{}) {
-			log.Println("UpdateFunc")
-		},
-		DeleteFunc: func(obj interface{}) {
-			log.Println("DeleteFunc")
-		},
-	})
-
-	informer.Run(make(chan struct{}))
-
+	device := post.Spec.Device
+	inter := post.Spec.Parameters
+	fmt.Println(device)
+	fmt.Println(inter)
 	return ctrl.Result{}, nil
 }
 
