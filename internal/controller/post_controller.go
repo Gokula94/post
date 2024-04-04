@@ -18,13 +18,18 @@ package controller
 
 import (
 	"context"
-	"fmt"
+	"log"
+	"os"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	//"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -59,14 +64,52 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	// if err != nil {
 	// 	panic(err)
 	// }
-	config, err := manager.New(config.GetConfigOrDie(), manager.Options{})
+
+	clusterConfig, err := buildConfiguration()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(config)
+	clusterClient, err := dynamic.NewForConfig(clusterConfig)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	resource := httpv1alpha1.GroupVersion.WithResource("posts")
+	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient,
+		time.Minute, "", nil)
+	informer := factory.ForResource(resource).Informer()
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			log.Println("AddFunc")
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			log.Println("UpdateFunc")
+		},
+		DeleteFunc: func(obj interface{}) {
+			log.Println("DeleteFunc")
+		},
+	})
+
+	informer.Run(make(chan struct{}))
 
 	return ctrl.Result{}, nil
+}
+
+func buildConfiguration() (*rest.Config, error) {
+	kubeconfig := os.Getenv("KUBECONFIG")
+	var clusterConfig *rest.Config
+	var err error
+	if kubeconfig != "" {
+		clusterConfig, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+	} else {
+		clusterConfig, err = rest.InClusterConfig()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return clusterConfig, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
