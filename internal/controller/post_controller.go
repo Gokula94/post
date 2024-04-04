@@ -18,16 +18,17 @@ package controller
 
 import (
 	"context"
+	"flag"
 	"log"
-	"os"
+	"path/filepath"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/dynamicinformer"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -65,12 +66,20 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	// 	panic(err)
 	// }
 
-	clusterConfig, err := buildConfiguration()
+	var kubeconfig *string
+	if home := homedir.HomeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+	flag.Parse()
+
+	cfg, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		panic(err)
+		log.Println("could not get config")
 	}
 
-	clusterClient, err := dynamic.NewForConfig(clusterConfig)
+	clusterClient, err := dynamic.NewForConfig(cfg)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -94,22 +103,6 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	informer.Run(make(chan struct{}))
 
 	return ctrl.Result{}, nil
-}
-
-func buildConfiguration() (*rest.Config, error) {
-	kubeconfig := os.Getenv("KUBECONFIG")
-	var clusterConfig *rest.Config
-	var err error
-	if kubeconfig != "" {
-		clusterConfig, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-	} else {
-		clusterConfig, err = rest.InClusterConfig()
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return clusterConfig, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
