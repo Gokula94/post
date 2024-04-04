@@ -19,11 +19,13 @@ package controller
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
-	"strings"
+	"os"
+	"path/filepath"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -31,6 +33,7 @@ import (
 	//"sigs.k8s.io/controller-runtime/pkg/log"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	httpv1alpha1 "post.com/api/v1alpha1"
 )
 
@@ -69,23 +72,28 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	spec := post.Spec
 	fmt.Println(spec)
-
-	const myurl = "https://api.restful-api.dev/objects"
-	fmt.Println(myurl)
-	requestBody := strings.NewReader(`
-			 {
-				spec
-			 }
-			 `)
-	fmt.Println(requestBody)
-	response, err := http.Post(myurl, "application/json", requestBody)
+	kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
-		panic(err)
+		fmt.Println("Error building kubeconfig:", err)
+		os.Exit(1)
 	}
-	fmt.Println("post call is sucessful")
-	defer response.Body.Close()
-	content, _ := io.ReadAll(response.Body)
-	fmt.Println(string(content))
+
+	// Create a Kubernetes clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		fmt.Println("Error creating clientset:", err)
+		os.Exit(1)
+	}
+
+	pods, err := clientset.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		fmt.Println("Error listing pods:", err)
+		os.Exit(1)
+	}
+	for _, pod := range pods.Items {
+		fmt.Printf("  PodSpec: %+v\n", pod.Spec)
+	}
 
 	return ctrl.Result{}, nil
 }
