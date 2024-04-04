@@ -18,15 +18,20 @@ package controller
 
 import (
 	"context"
+	"flag"
 	"fmt"
-	"io"
-	"net/http"
-	"strings"
+	"log"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	//"sigs.k8s.io/controller-runtime/pkg/log"
 
 	httpv1alpha1 "post.com/api/v1alpha1"
 )
@@ -51,69 +56,40 @@ type PostReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	//log := log.FromContext(ctx)
+	var kubeconfig string
+	flag.StringVar(&kubeconfig, "kubeconfig", "", "path to Kubernetes config file")
+	flag.Parse()
 
-	//logger.Info("customresource", req.NamespacedName)
+	var config *rest.Config
+	var err error
 
-	// Fetch the CustomResource instance
-	//instance := &httpv1alpha1.Post{}
-	// if err := r.Get(ctx, req.NamespacedName, instance); err != nil {
-	// 	return ctrl.Result{}, client.IgnoreNotFound(err)
-	// }
-
-	// Call REST API
-	//myurl := "https://api.restful-api.dev/objects"
-
-	post := &httpv1alpha1.Post{}
-	logger.Info("evaluating custom resource")
-
-	err := r.Get(ctx, req.NamespacedName, post)
-	if err == nil {
-		// logger.Info("Error getting custom resource: %v", err)
-		// return ctrl.Result{}, err
-
-		logger.Info(fmt.Sprintf("Pod created is %v", req.NamespacedName))
-
-		const myurl = "https://api.restful-api.dev/objects"
-		fmt.Println(myurl)
-		requestBody := strings.NewReader(`
-			 
-				{
-					"name": "3801-XGS-PON",
-					"data": {
-						"Rx_Operating_Wavelength": 1280,
-						"type": "10G Passive  Optical Network (PON) transceivers"
-					}
-				 }
-
-			 `)
-		fmt.Println(requestBody)
-		response, err := http.Post(myurl, "application/json", requestBody)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("post call is sucessful")
-		defer response.Body.Close()
-		content, _ := io.ReadAll(response.Body)
-
-		fmt.Println(string(content))
+	if kubeconfig == "" {
+		log.Printf("using in-cluster configuration")
+		config, err = rest.InClusterConfig()
+	} else {
+		log.Printf("using configuration from '%s'", kubeconfig)
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 	}
 
-	// //req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(payload))
-	// req, err := http.Post(myurl, "application/json", payload)
-	// if err != nil {
-	// 	logger.Info("Failed to create HTTP request")
-	// 	return ctrl.Result{}, err
-	// }
-	// req.Header.Set("Content-Type", "application/json")
+	if err != nil {
+		panic(err)
+	}
 
-	// client := &http.Client{}
-	// resp, err := client.Do(req)
-	// if err != nil {
-	// 	logger.Info("Failed to call REST API")
-	// 	return ctrl.Result{}, err
-	// }
-	// defer resp.Body.Close()
+	httpv1alpha1.AddToScheme(scheme.Scheme)
+
+	crdConfig := *config
+	crdConfig.ContentConfig.GroupVersion = &schema.GroupVersion{Group: httpv1alpha1.GroupVersion.Group, Version: httpv1alpha1.GroupVersion.Version}
+	crdConfig.APIPath = "/apis"
+	crdConfig.NegotiatedSerializer = serializer.NewCodecFactory(scheme.Scheme)
+	crdConfig.UserAgent = rest.DefaultKubernetesUserAgent()
+
+	exampleRestClient, err := rest.UnversionedRESTClientFor(&crdConfig)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(exampleRestClient)
+
 	return ctrl.Result{}, nil
 }
 
