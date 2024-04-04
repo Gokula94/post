@@ -18,18 +18,13 @@ package controller
 
 import (
 	"context"
-	"flag"
 	"fmt"
-	"log"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	//"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -57,38 +52,19 @@ type PostReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	//log := log.FromContext(ctx)
-	var kubeconfig string
-	flag.StringVar(&kubeconfig, "kubeconfig", "", "path to Kubernetes config file")
-	flag.Parse()
+	//rules := clientcmd.NewDefaultClientConfigLoadingRules()
+	//kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, &clientcmd.ConfigOverrides{})
 
-	var config *rest.Config
-	var err error
-
-	if kubeconfig == "" {
-		log.Printf("using in-cluster configuration")
-		config, err = rest.InClusterConfig()
-	} else {
-		log.Printf("using configuration from '%s'", kubeconfig)
-		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-	}
-
+	// c, err := kubeconfig.ClientConfig()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	config, err := manager.New(config.GetConfigOrDie(), manager.Options{})
 	if err != nil {
 		panic(err)
 	}
 
-	httpv1alpha1.AddToScheme(scheme.Scheme)
-
-	crdConfig := *config
-	crdConfig.ContentConfig.GroupVersion = &schema.GroupVersion{Group: httpv1alpha1.GroupVersion.Group, Version: httpv1alpha1.GroupVersion.Version}
-	crdConfig.APIPath = "/apis"
-	crdConfig.NegotiatedSerializer = serializer.NewCodecFactory(scheme.Scheme)
-	crdConfig.UserAgent = rest.DefaultKubernetesUserAgent()
-
-	exampleRestClient, err := rest.UnversionedRESTClientFor(&crdConfig)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(exampleRestClient)
+	fmt.Println(config)
 
 	return ctrl.Result{}, nil
 }
