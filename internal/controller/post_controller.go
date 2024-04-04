@@ -73,9 +73,9 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	const myurl = "https://api.restful-api.dev/objects"
 	fmt.Println(myurl)
 	requestBody := strings.NewReader(`
-			 
+			 {
 				spec
-
+			 }
 			 `)
 	fmt.Println(requestBody)
 	response, err := http.Post(myurl, "application/json", requestBody)
