@@ -93,6 +93,7 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 	for _, pod := range pods.Items {
 		fmt.Printf("  PodSpec: %+v\n", pod.Spec)
+		fmt.Println(pod)
 	}
 
 	return ctrl.Result{}, nil
