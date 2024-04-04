@@ -21,9 +21,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,9 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	//"sigs.k8s.io/controller-runtime/pkg/log"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	httpv1alpha1 "post.com/api/v1alpha1"
 )
 
@@ -58,20 +59,6 @@ type PostReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	post := &httpv1alpha1.Post{}
-
-	err := r.Get(ctx, req.NamespacedName, post)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.Info("Scaler resource not found. Ignoring since object must be deleted.")
-			return ctrl.Result{}, nil
-		}
-		logger.Error(err, "Failed")
-		return ctrl.Result{}, err
-	}
-
-	spec := post.Spec
-	fmt.Println(spec)
 	kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
@@ -79,23 +66,28 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		os.Exit(1)
 	}
 
-	// Create a Kubernetes clientset
-	clientset, err := kubernetes.NewForConfig(config)
+	clusterClient, err := dynamic.NewForConfig(config)
 	if err != nil {
-		fmt.Println("Error creating clientset:", err)
-		os.Exit(1)
+		logger.Info("error", err)
 	}
 
-	pods, err := clientset.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		fmt.Println("Error listing pods:", err)
-		os.Exit(1)
-	}
-	for _, pod := range pods.Items {
-		fmt.Printf("  PodSpec: %+v\n", pod.Spec)
-		fmt.Println(pod)
-	}
+	resource := httpv1alpha1.GroupVersion.WithResource("featureflagconfigurations")
+	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient,
+		time.Minute, "", nil)
+	informer := factory.ForResource(resource).Informer()
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			logger.Info("AddFunc")
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			logger.Info("UpdateFunc")
+		},
+		DeleteFunc: func(obj interface{}) {
+			logger.Info("DeleteFunc")
+		},
+	})
 
+	informer.Run(make(chan struct{}))
 	return ctrl.Result{}, nil
 }
 
