@@ -19,6 +19,9 @@ package controller
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -63,12 +66,27 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		logger.Error(err, "Failed")
 		return ctrl.Result{}, err
 	}
-	//device := post.Spec.Device
-	//inter := post.Spec.Parameters
+
 	spec := post.Spec
 	fmt.Println(spec)
-	//fmt.Println(device)
-	//fmt.Println(inter)
+
+	const myurl = "https://api.restful-api.dev/objects"
+	fmt.Println(myurl)
+	requestBody := strings.NewReader(`
+			 
+				spec
+
+			 `)
+	fmt.Println(requestBody)
+	response, err := http.Post(myurl, "application/json", requestBody)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("post call is sucessful")
+	defer response.Body.Close()
+	content, _ := io.ReadAll(response.Body)
+	fmt.Println(string(content))
+
 	return ctrl.Result{}, nil
 }
 
