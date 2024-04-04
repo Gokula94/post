@@ -71,7 +71,7 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		logger.Info("error", err)
 	}
 
-	resource := httpv1alpha1.GroupVersion.WithResource("featureflagconfigurations")
+	resource := httpv1alpha1.GroupVersion.WithResource("post")
 	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient,
 		time.Minute, "", nil)
 	informer := factory.ForResource(resource).Informer()
