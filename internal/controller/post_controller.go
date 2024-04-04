@@ -63,10 +63,12 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		logger.Error(err, "Failed")
 		return ctrl.Result{}, err
 	}
-	device := post.Spec.Device
-	inter := post.Spec.Parameters
-	fmt.Println(device)
-	fmt.Println(inter)
+	//device := post.Spec.Device
+	//inter := post.Spec.Parameters
+	spec := post.Spec
+	fmt.Println(spec)
+	//fmt.Println(device)
+	//fmt.Println(inter)
 	return ctrl.Result{}, nil
 }
 
