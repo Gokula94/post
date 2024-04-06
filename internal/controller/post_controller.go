@@ -21,12 +21,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/dynamic/dynamicinformer"
-	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -59,6 +56,9 @@ type PostReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+	//post := &httpv1alpha1.Post{}
+
+	//err := r.Get(ctx, req.NamespacedName, post)
 	kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
@@ -66,28 +66,19 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		os.Exit(1)
 	}
 
-	clusterClient, err := dynamic.NewForConfig(config)
+	// Create a Kubernetes clientset
+	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		logger.Info("error", err)
+		fmt.Println("Error creating clientset:", err)
+		os.Exit(1)
 	}
-
-	resource := httpv1alpha1.GroupVersion.WithResource("posts")
-	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(clusterClient,
-		time.Minute, "", nil)
-	informer := factory.ForResource(resource).Informer()
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			logger.Info("AddFunc")
-		},
-		UpdateFunc: func(oldObj, newObj interface{}) {
-			logger.Info("UpdateFunc")
-		},
-		DeleteFunc: func(obj interface{}) {
-			logger.Info("DeleteFunc")
-		},
-	})
-
-	informer.Run(make(chan struct{}))
+	logger.Info("gonna start restclient")
+	d, err := clientset.RESTClient().Get().Stream(ctx)
+	if err != nil {
+		logger.Info("Error")
+	}
+	fmt.Println(d)
+	logger.Info("printed restclient")
 	return ctrl.Result{}, nil
 }
 
