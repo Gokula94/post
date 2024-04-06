@@ -19,13 +19,8 @@ package controller
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -56,34 +51,25 @@ type PostReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	//post := &httpv1alpha1.Post{}
+	post := &httpv1alpha1.Post{}
 
-	//err := r.Get(ctx, req.NamespacedName, post)
-	kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	if err != nil {
-		fmt.Println("Error building kubeconfig:", err)
-		os.Exit(1)
-	}
+	fmt.Println(post)
 
-	// Create a Kubernetes clientset
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		fmt.Println("Error creating clientset:", err)
-		os.Exit(1)
-	}
+	err := r.Get(ctx, req.NamespacedName, post)
+	// kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
+	// config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	// if err != nil {
+	// 	fmt.Println("Error building kubeconfig:", err)
+	// 	os.Exit(1)
+	// }
+
+	// // Create a Kubernetes clientset
+	// clientset, err := kubernetes.NewForConfig(config)
+	// if err != nil {
+	// 	fmt.Println("Error creating clientset:", err)
+	// 	os.Exit(1)
+	// }
 	logger.Info("gonna start restclient")
-
-	group := "http.gokula.zinkworks"
-	version := "v1alpha1"
-	namespace := "default" // Specify the namespace where your custom resource is located
-	plural := "posts"      // Specify the plural name of your custom resource
-
-	// Get the absolute path for accessing your custom resource
-	absPath := clientset.RESTClient().Get().AbsPath(fmt.Sprintf("/apis/%s/%s/namespaces/%s/%s", group, version, namespace, plural))
-
-	// Print the absolute path
-	fmt.Println("Absolute path for your custom resource:", absPath)
 
 	return ctrl.Result{}, err
 }
