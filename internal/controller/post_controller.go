@@ -73,16 +73,12 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		os.Exit(1)
 	}
 	logger.Info("gonna start restclient")
-	group := "http"
-	version := "v1alpha1"
-	namespace := "default" // Specify the namespace where your custom resource is located
-	plural := "posts"      // Specify the plural name of your custom resource
 
-	// Get the absolute path for accessing your custom resource
-	absPath := clientset.RESTClient().Get().AbsPath(fmt.Sprintf("/apis/%s/%s/namespaces/%s/%s", group, version, namespace, plural))
-
-	// Print the absolute path
-	fmt.Println("Absolute path for your custom resource:", absPath)
+	d, err := clientset.RESTClient().Get().AbsPath("/apis/http/v1alpha1/namespaces/default/posts").DoRaw(context.TODO())
+	if err != nil {
+		panic(err.Error())
+	}
+	fmt.Println("Absolute path for your custom resource:", d)
 
 	return ctrl.Result{}, err
 }
