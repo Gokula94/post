@@ -74,7 +74,7 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 	logger.Info("gonna start restclient")
 
-	d, err := clientset.RESTClient().Get().AbsPath("/apis/http/v1alpha1/namespaces/default/posts").DoRaw(context.TODO())
+	d, err := clientset.RESTClient().Get().AbsPath("/apis/http.gokula.zinkworks/v1alpha1/namespaces/default/posts").DoRaw(context.TODO())
 	if err != nil {
 		panic(err.Error())
 	}
