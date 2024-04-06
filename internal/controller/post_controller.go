@@ -74,11 +74,16 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 	logger.Info("gonna start restclient")
 
-	d, err := clientset.RESTClient().Get().AbsPath("/apis/http.gokula.zinkworks/v1alpha1/namespaces/default/posts").DoRaw(context.TODO())
-	if err != nil {
-		panic(err.Error())
-	}
-	fmt.Println("Absolute path for your custom resource:", d)
+	group := "http.gokula.zinkworks"
+	version := "v1alpha1"
+	namespace := "default" // Specify the namespace where your custom resource is located
+	plural := "posts"      // Specify the plural name of your custom resource
+
+	// Get the absolute path for accessing your custom resource
+	absPath := clientset.RESTClient().Get().AbsPath(fmt.Sprintf("/apis/%s/%s/namespaces/%s/%s", group, version, namespace, plural))
+
+	// Print the absolute path
+	fmt.Println("Absolute path for your custom resource:", absPath)
 
 	return ctrl.Result{}, err
 }
