@@ -76,10 +76,9 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	group := "http.gokula.zinkworks"
 	version := "v1alpha1"
-	//namespace := "default" // Specify the namespace where your custom resource is located
-	plural := "posts" // Specify the plural name of your custom resource
+	namespace := "default" // Specify the namespace where your custom resource is located
+	plural := "posts"      // Specify the plural name of your custom resource
 
-	namespace := "..."
 	// Get the absolute path for accessing your custom resource
 	absPath := clientset.RESTClient().Get().AbsPath(fmt.Sprintf("/apis/%s/%s/namespaces/%s/%s", group, version, namespace, plural))
 
