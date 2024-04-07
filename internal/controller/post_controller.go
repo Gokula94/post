@@ -79,7 +79,7 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	logger.Info("printing via name")
 
-	a, err := clientset.RESTClient().Get().Name("posts").DoRaw(context.TODO())
+	a, err := clientset.RESTClient().Get().Name("post").DoRaw(context.TODO())
 	fmt.Println(a)
 
 	return ctrl.Result{}, err
