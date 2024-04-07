@@ -80,16 +80,12 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	logger.Info("printing via name")
 
-	group := ""
-	version := "v1"
-	namespace := "default"
-	plural := "pods"
-
 	// Get the absolute path for accessing Pods
-	absPath := clientset.CoreV1().RESTClient().Get().
-		AbsPath(fmt.Sprintf("/apis/%s/%s/namespaces/%s/%s", group, version, namespace, plural))
+	absPath, err := clientset.RESTClient().Get().AbsPath("/apis/v1/namespaces/default/pods").DoRaw(context.TODO())
+	if err != nil {
+		logger.Info("Not able to fetch pods")
+	}
 
-	fmt.Println("Absolute path for accessing Pods:", absPath.URL().String())
 	fmt.Println(absPath)
 
 	return ctrl.Result{}, err
