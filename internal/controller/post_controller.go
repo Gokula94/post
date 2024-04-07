@@ -19,8 +19,13 @@ package controller
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -51,25 +56,26 @@ type PostReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
-	post := &httpv1alpha1.Post{}
 
-	fmt.Println(post)
+	kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		fmt.Println("Error building kubeconfig:", err)
+		os.Exit(1)
+	}
 
-	err := r.Get(ctx, req.NamespacedName, post)
-	// kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
-	// config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	// if err != nil {
-	// 	fmt.Println("Error building kubeconfig:", err)
-	// 	os.Exit(1)
-	// }
-
-	// // Create a Kubernetes clientset
-	// clientset, err := kubernetes.NewForConfig(config)
-	// if err != nil {
-	// 	fmt.Println("Error creating clientset:", err)
-	// 	os.Exit(1)
-	// }
-	logger.Info("gonna start restclient")
+	// Create a Kubernetes clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		fmt.Println("Error creating clientset:", err)
+		os.Exit(1)
+	}
+	logger.Info("starting main code")
+	d, err := clientset.RESTClient().Get().AbsPath("apis/http.gokula.zinkworks/v1alpha1/posts").DoRaw(context.TODO())
+	if err != nil {
+		panic(err.Error())
+	}
+	fmt.Println(d)
 
 	return ctrl.Result{}, err
 }
