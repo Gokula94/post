@@ -71,7 +71,8 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		os.Exit(1)
 	}
 	logger.Info("starting main code")
-	d, err := clientset.RESTClient().Get().AbsPath("apis/http.gokula.zinkworks/v1alpha1/posts").DoRaw(context.TODO())
+
+	d, err := clientset.RESTClient().Get().AbsPath("apis/http.gokula.zinkworks/v1alpha1/namespaces/default/posts").DoRaw(context.TODO())
 	if err != nil {
 		panic(err.Error())
 	}
@@ -79,10 +80,20 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	logger.Info("printing via name")
 
-	a, err := clientset.RESTClient().Get().Name("post").DoRaw(context.TODO())
-	fmt.Println(a)
+	group := ""
+	version := "v1"
+	namespace := "default"
+	plural := "pods"
+
+	// Get the absolute path for accessing Pods
+	absPath := clientset.CoreV1().RESTClient().Get().
+		AbsPath(fmt.Sprintf("/apis/%s/%s/namespaces/%s/%s", group, version, namespace, plural))
+
+	fmt.Println("Absolute path for accessing Pods:", absPath.URL().String())
+	fmt.Println(absPath)
 
 	return ctrl.Result{}, err
+
 }
 
 // SetupWithManager sets up the controller with the Manager.
