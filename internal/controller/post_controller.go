@@ -22,8 +22,10 @@ import (
 	"os"
 	"path/filepath"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -65,29 +67,26 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	// Create a Kubernetes clientset
-	clientset, err := kubernetes.NewForConfig(config)
+	clientset, err := dynamic.NewForConfig(config)
 	if err != nil {
-		fmt.Println("Error creating clientset:", err)
-		os.Exit(1)
+		fmt.Printf("Error creating dynamic client: %v", err)
+	} else {
+		fmt.Printf("Dynamic client created")
 	}
 	logger.Info("starting main code")
 
-	d, err := clientset.RESTClient().Get().AbsPath("apis/http.gokula.zinkworks/v1alpha1/namespaces/default/posts").DoRaw(context.TODO())
+	list, err := clientset.Resource(schema.GroupVersionResource{
+		Group:    "http.gokula.zinkworks",
+		Version:  "v1alpha1",
+		Resource: "posts",
+	}).Namespace("default").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		panic(err.Error())
-	}
-	fmt.Println(d)
-
-	logger.Info("printing via name")
-
-	// Get the absolute path for accessing Pods
-	absPath, err := clientset.RESTClient().Get().AbsPath("/apis/v1/namespaces/default/pods").DoRaw(context.TODO())
-	if err != nil {
-		logger.Info("Not able to fetch pods")
+		logger.Info("not able to list resource")
 	}
 
-	fmt.Println(absPath)
+	fmt.Println(list)
 
+	
 	return ctrl.Result{}, err
 
 }
