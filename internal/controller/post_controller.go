@@ -94,6 +94,8 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		if err != nil {
 			logger.Info("error in getting CR specs")
 		}
+		fmt.Println("printing s")
+		fmt.Println(s)
 
 		yamlData, err := yaml.Marshal(s)
 		if err != nil {
