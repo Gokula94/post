@@ -94,17 +94,23 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		if err != nil {
 			logger.Info("error in getting CR specs")
 		}
-
-		yamlData, err := yaml.Marshal(s)
+		yamldata, err := yamltojson convert --print s
 		if err != nil {
-			fmt.Println("Error marshaling YAML:", err)
+			fmt.Println("error converting to json")
 		}
+		jsonData, err := json.Marshal(yamldata)
+	    if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		// yamlData, err := yaml.Marshal(s)
+		// if err != nil {
+		// 	fmt.Println("Error marshaling YAML:", err)
+		 }
 
 		logger.Info("Printing yamldata")
 		fmt.Println(yamlData)
 		// Send a POST request with the YAML data in the request body
 		url := "https://api.restful-api.dev/objects"
-		resp, err := http.Post(url, "application/yaml", bytes.NewBuffer(yamlData))
+		resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
 		if err != nil {
 			fmt.Println("Error sending POST request:", err)
 		}
