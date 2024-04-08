@@ -73,7 +73,7 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	} else {
 		fmt.Printf("Dynamic client created")
 	}
-	logger.Info("starting main code")
+	logger.Info("starting main code\n")
 
 	list, err := clientset.Resource(schema.GroupVersionResource{
 		Group:    "http.gokula.zinkworks",
@@ -83,10 +83,13 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err != nil {
 		logger.Info("not able to list resource")
 	}
-
 	fmt.Println(list)
 
-	
+	for _, res := range list.Items {
+		fmt.Printf("my cr spec is: %v\n", res.Object)
+		fmt.Println(res)
+	}
+
 	return ctrl.Result{}, err
 
 }
