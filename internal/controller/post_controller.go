@@ -17,11 +17,15 @@ limitations under the License.
 package controller
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 
+	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -86,7 +90,34 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	fmt.Println(list)
 
 	for _, res := range list.Items {
-		fmt.Printf("my cr spec is: %v\n", res.GetAnnotations())
+		s, err := fmt.Printf("my cr spec is: %v\n", res.GetAnnotations())
+		if err != nil {
+			logger.Info("error in getting CR specs")
+		}
+
+		yamlData, err := yaml.Marshal(s)
+		if err != nil {
+			fmt.Println("Error marshaling YAML:", err)
+		}
+
+		logger.Info("Printing yamldata")
+		fmt.Println(yamlData)
+		// Send a POST request with the YAML data in the request body
+		url := "https://api.restful-api.dev/objects"
+		resp, err := http.Post(url, "application/yaml", bytes.NewBuffer(yamlData))
+		if err != nil {
+			fmt.Println("Error sending POST request:", err)
+		}
+		defer resp.Body.Close()
+
+		// Read the response body
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println("Error reading response body:", err)
+		}
+		logger.Info("Printing response body")
+		// Print the response body
+		fmt.Println("Response:", string(body))
 	}
 
 	return ctrl.Result{}, err
