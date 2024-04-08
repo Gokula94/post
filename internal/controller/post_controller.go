@@ -90,7 +90,7 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	fmt.Println(list)
 
 	for _, res := range list.Items {
-		s, err := fmt.Printf("my cr spec is: %v\n", res.GetAnnotations())
+		s := res.GetAnnotations()
 		if err != nil {
 			logger.Info("error in getting CR specs")
 		}
