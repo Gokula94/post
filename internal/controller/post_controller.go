@@ -124,7 +124,7 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		if err != nil {
 			fmt.Println("Error reading response body:", err)
 		}
-		logger.Info("Printing response body")
+		logger.Info("Printing response body\n")
 		// Print the response body
 		fmt.Println("Response:", string(body))
 	}
