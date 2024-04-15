@@ -19,6 +19,7 @@ package controller
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -102,11 +103,17 @@ func (r *PostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			fmt.Println("Error marshaling YAML:", err)
 		}
 
+		// Encode data into JSON
+		jsonData, err := json.Marshal(yamlData)
+		if err != nil {
+			fmt.Println("Error marshaling to json:", err)
+		}
+
 		logger.Info("Printing yamldata")
-		fmt.Println(yamlData)
+		fmt.Println(jsonData)
 		// Send a POST request with the YAML data in the request body
 		url := "https://api.restful-api.dev/objects"
-		resp, err := http.Post(url, "application/yaml", bytes.NewBuffer(yamlData))
+		resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
 		if err != nil {
 			fmt.Println("Error sending POST request:", err)
 		}
